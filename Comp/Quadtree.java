@@ -47,7 +47,7 @@ public class Quadtree {
             this.largeur = scan.nextInt();
             this.hauteur = scan.nextInt();
             this.lumMax = scan.nextInt(); 
-            this.tabLum = new int[this.largeur][this.hauteur];
+            this.tabLum = new int[this.hauteur][this.largeur];
 
             for(int ligne = 0; ligne < getHauteur(); ligne++){
                 for(int colonne = 0; colonne < getLargeur(); colonne++){
@@ -74,8 +74,26 @@ public class Quadtree {
     public void printInfoPGM(){
         System.out.print("Magic Number : " + this.magicNumber + '\n' + 
                         "Commentaires : " + this.commentaire + '\n' +
-                        "Size : " + this.largeur + "x" + this.hauteur + '\n' + 
+                        "Size : " + this.hauteur + "x" + this.largeur + '\n' + 
                         "Luminosité max : " + this.lumMax + '\n');
+    }
+
+    public void createQuadTree(Quadtree A,int i,int j){
+        //image de taille 2^n*2^n
+        if(i == (this.largeur*this.hauteur)/4){
+            this.f1.lum = this.tabLum[0][0];
+            this.f2.lum = this.tabLum[0][1];
+            this.f3.lum = this.tabLum[1][0];
+            this.f4.lum = this.tabLum[1][1];
+        } else {
+            i=i+2;
+            j=j+2;
+            createQuadTree(A.f1,i,j);
+            createQuadTree(A.f2,i,j);
+            createQuadTree(A.f3,i,j);
+            createQuadTree(A.f4,i,j);
+        }
+
     }
 
     //Il manque bcp de get et les set
