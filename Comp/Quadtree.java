@@ -4,6 +4,7 @@ import java.util.Scanner;
 public class Quadtree {
 
     //Chemin du PGM compressé de type : imgPGM/[nom.pgm] ou chemin complet
+    //Image de taille 2^n*2^n (carré)
     private String path;
 
     //Informations sur le PGM a garder pour le retourner une fois compressé
@@ -29,9 +30,16 @@ public class Quadtree {
     public Quadtree(String path, Quadtree f1,Quadtree f2,Quadtree f3,Quadtree f4){
         this.path = path;
         this.f1 = f1;
+        this.f2 = f2;
+        this.f3 = f3;
+        this.f4 = f4;
+    }
+
+    public Quadtree(Quadtree f1,Quadtree f2,Quadtree f3,Quadtree f4){
         this.f1 = f1;
-        this.f1 = f1;
-        this.f1 = f1;
+        this.f2 = f2;
+        this.f3 = f3;
+        this.f4 = f4;
     }
     
     public void ReadImg() {
@@ -78,24 +86,57 @@ public class Quadtree {
                         "Luminosité max : " + this.lumMax + '\n');
     }
 
-    public void createQuadTree(Quadtree A,int i,int j){
-        //image de taille 2^n*2^n
-        if(i == (this.largeur*this.hauteur)/4){
-            this.f1.lum = this.tabLum[0][0];
-            this.f2.lum = this.tabLum[0][1];
-            this.f3.lum = this.tabLum[1][0];
-            this.f4.lum = this.tabLum[1][1];
-        } else {
-            i=i+2;
-            j=j+2;
-            createQuadTree(A.f1,i,j);
-            createQuadTree(A.f2,i,j);
-            createQuadTree(A.f3,i,j);
-            createQuadTree(A.f4,i,j);
-        }
+    public Quadtree createQuadTree(){
+        int nbNivCreer = 0;
+        int nbNivMax = this.hauteur/2;
+        int hauteurDiv = this.hauteur/2;
+        int largeurDiv = this.largeur/2;
+        int[][] tabLumDiv = new int[hauteurDiv][largeurDiv];
 
+        if(nbNivCreer == nbNivMax){
+            this.f1 = new Quadtree(null,null,null,null);
+            this.f2 = new Quadtree(null,null,null,null);
+            this.f3 = new Quadtree(null,null,null,null);
+            this.f4 = new Quadtree(null,null,null,null);
+
+            this.f1.lum = tabLumDiv[0][0];
+            this.f2.lum = tabLumDiv[0][1];
+            this.f3.lum = tabLumDiv[1][0];
+            this.f4.lum = tabLumDiv[1][1];
+        } else {
+            nbNivCreer++;
+            for(int ligne = 0; ligne < hauteurDiv; ligne++){
+                for(int colonne = 0; colonne < largeurDiv; colonne++){
+                    tabLumDiv[ligne][colonne] = this.tabLum[ligne][colonne];
+                }
+            }
+            this.hauteur = hauteurDiv;
+            this.largeur = largeurDiv;
+
+            this.f1 = new Quadtree(null,null,null,null);
+            return this.f1.createQuadTree();
+            this.f2 = new Quadtree(null,null,null,null);
+            return this.f2.createQuadTree();
+            this.f3 = new Quadtree(null,null,null,null);
+            return this.f3.createQuadTree();
+            this.f4 = new Quadtree(null,null,null,null);
+            return this.f4.createQuadTree();
+        }
     }
 
+    public String toString(){
+        System.out.print("(");
+        if(this.f1 == null){
+            System.out.print( "("+this.f1.lum+" "+this.f2.lum+" "+this.f3.lum+" "+this.f4.lum+")");
+        } else {
+            return this.f1.toString();
+            return this.f2.toString();
+            return this.f3.toString();
+            return this.f4.toString();
+        }
+        System.out.print(")");
+    }
+    
     //Il manque bcp de get et les set
 
     public int getLum(){
