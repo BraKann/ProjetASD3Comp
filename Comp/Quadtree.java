@@ -41,7 +41,14 @@ public class Quadtree {
         this.f3 = f3;
         this.f4 = f4;
     }
-    
+
+    public Quadtree(int lum){
+        this.f1 = null;
+        this.f2 = null;
+        this.f3 = null;
+        this.f4 = null;
+        this.lum = lum;
+    }
     public void ReadImg() {
         try {
 
@@ -50,6 +57,7 @@ public class Quadtree {
 
             this.magicNumber = scan.nextLine();
             this.commentaire = scan.nextLine();
+            //Verification reste des commentaire " commence par #"
             this.commentaire += " ";
             this.commentaire += scan.nextLine();
             this.largeur = scan.nextInt();
@@ -87,52 +95,35 @@ public class Quadtree {
     }
 
     public Quadtree createQuadTree(){
-        int nbNivCreer = 0;
-        int nbNivMax = this.hauteur/2;
-        int hauteurDiv = this.hauteur/2;
-        int largeurDiv = this.largeur/2;
-        int[][] tabLumDiv = new int[hauteurDiv][largeurDiv];
-
-        if(nbNivCreer == nbNivMax){
-            this.f1 = new Quadtree(null,null,null,null);
-            this.f2 = new Quadtree(null,null,null,null);
-            this.f3 = new Quadtree(null,null,null,null);
-            this.f4 = new Quadtree(null,null,null,null);
-
-            this.f1.lum = tabLumDiv[0][0];
-            this.f2.lum = tabLumDiv[0][1];
-            this.f3.lum = tabLumDiv[1][0];
-            this.f4.lum = tabLumDiv[1][1];
-        } else {
-            nbNivCreer++;
-            for(int ligne = 0; ligne < hauteurDiv; ligne++){
-                for(int colonne = 0; colonne < largeurDiv; colonne++){
-                    tabLumDiv[ligne][colonne] = this.tabLum[ligne][colonne];
-                }
-            }
-            this.hauteur = hauteurDiv;
-            this.largeur = largeurDiv;
-
-            this.f1 = new Quadtree(null,null,null,null);
-            return this.f1.createQuadTree();
-            this.f2 = new Quadtree(null,null,null,null);
-            return this.f2.createQuadTree();
-            this.f3 = new Quadtree(null,null,null,null);
-            return this.f3.createQuadTree();
-            this.f4 = new Quadtree(null,null,null,null);
-            return this.f4.createQuadTree();
-        }
+        Quadtree sf1 = new Quadtree(5);
+        Quadtree sf2= new Quadtree(6);
+        Quadtree sf3 = new Quadtree(4);
+        Quadtree sf4 = new Quadtree(8);
+        Quadtree newTree = new Quadtree(sf1, sf2, sf3, sf4);
+        return newTree;
     }
 
-    public String toString(){
+    //Regarde si tout les fils du quadtree ont une valeur entiere positive(feuille) dans ce cas c'est une brindille
+    // la comparaison avec null ne marche pas car int n'est pas un objet
+    public boolean estBrindille(){
+        
+        return false;
+    }
+
+    public boolean estFeuille(){
+        return false;
+    }
+
+    //toString existe deja
+    public void _toString(){
         System.out.print("(");
-        if(this.f1 == null){
-            System.out.print( "("+this.f1.lum+" "+this.f2.lum+" "+this.f3.lum+" "+this.f4.lum+")");
+        if(this.f1.estBrindille()){
+            System.out.print("("+this.f1.lum+" "+this.f2.lum+" "+this.f3.lum+" "+this.f4.lum+") ");
         } else {
-            return this.f1.toString();
-            return this.f2.toString();
-            return this.f3.toString();
-            return this.f4.toString();
+            this.f1._toString();
+            this.f2._toString();
+            this.f3._toString();
+            this.f4._toString();
         }
         System.out.print(")");
     }
