@@ -14,8 +14,8 @@ public class Quadtree {
     private int hauteur;
     private int lumMax;            //La racine prendra la luminosité max ?
 
-    //Permet de stocker les valeurs de luminosité lu durant le pacours du PGM
-    private int[][] tabLum = new int[this.largeur][this.hauteur];
+    //Permet de stocker les valeurs de luminosité lu durant le pacours du PGM (hauteur = ligne ET largeur = colonne)
+    private int[][] tabLum;
     
     //Valeurs de luminosité comprise dans le PGM
     private int lum;               
@@ -49,6 +49,7 @@ public class Quadtree {
         this.f4 = null;
         this.lum = lum;
     }
+    
     public void ReadImg() {
         try {
 
@@ -65,8 +66,8 @@ public class Quadtree {
             this.lumMax = scan.nextInt(); 
             this.tabLum = new int[this.hauteur][this.largeur];
 
-            for(int ligne = 0; ligne < getHauteur(); ligne++){
-                for(int colonne = 0; colonne < getLargeur(); colonne++){
+            for(int ligne = 0; ligne < this.hauteur; ligne++){
+                for(int colonne = 0; colonne <this.largeur; colonne++){
                     tabLum[ligne][colonne]= scan.nextInt();
                 }
             }
@@ -79,8 +80,8 @@ public class Quadtree {
     }
 
     public void printTabLum(){
-        for(int ligne = 0; ligne < getHauteur(); ligne++){
-            for(int colonne = 0; colonne < getLargeur(); colonne++){
+        for(int ligne = 0; ligne < this.hauteur; ligne++){
+            for(int colonne = 0; colonne < this.largeur; colonne++){
                 System.out.print(this.tabLum[ligne][colonne] + " ");
             }
             System.out.println();
@@ -94,38 +95,91 @@ public class Quadtree {
                         "Luminosité max : " + this.lumMax + '\n');
     }
 
-    public Quadtree createQuadTree(){
-        Quadtree sf1 = new Quadtree(5);
-        Quadtree sf2= new Quadtree(6);
-        Quadtree sf3 = new Quadtree(4);
-        Quadtree sf4 = new Quadtree(8);
-        Quadtree newTree = new Quadtree(sf1, sf2, sf3, sf4);
-        return newTree;
-    }
-
-    //Regarde si tout les fils du quadtree ont une valeur entiere positive(feuille) dans ce cas c'est une brindille
-    // la comparaison avec null ne marche pas car int n'est pas un objet
-    public boolean estBrindille(){
+    public boolean sameColor(int[][] tabLum, int hauteur, int largeur){
+        boolean _isSameCol = true;
         
-        return false;
-    }
-
-    public boolean estFeuille(){
-        return false;
-    }
-
-    //toString existe deja
-    public void _toString(){
-        System.out.print("(");
-        if(this.f1.estBrindille()){
-            System.out.print("("+this.f1.lum+" "+this.f2.lum+" "+this.f3.lum+" "+this.f4.lum+") ");
-        } else {
-            this.f1._toString();
-            this.f2._toString();
-            this.f3._toString();
-            this.f4._toString();
+        for(int ligne = 0; ligne < hauteur; ligne++){
+            for(int colonne = 0; colonne < largeur; colonne++){
+                _isSameCol = _isSameCol && (tabLum[0][0] == tabLum[ligne][colonne]);
+                if(!_isSameCol){
+                    return _isSameCol;
+                }
+            }
         }
-        System.out.print(")");
+        return _isSameCol;
+    }
+
+    public int[][] decoupeTab(int[][] tabLum, int ligne, int colonne, int hauteur, int largeur){
+        int[][] newTab = new int[hauteur][largeur];
+        for(int posL = 0; posL < hauteur; posL++){
+            for(int posC = 0; posC < largeur; posC++){
+                newTab[posL][posC] = tabLum[posL + ligne][posC + colonne];
+            }
+        }
+        return newTab;
+    }
+
+    public Quadtree createQuadTree(int[][]tabLum, int hauteur, int largeur){
+        //Si L'image est composer de la meme couleur alors pas besoin de decoupe
+        if(sameColor(tabLum,hauteur,largeur)){
+            Quadtree newTree = new Quadtree(tabLum[0][0]);
+            return newTree;
+        }
+        //Si on ne peut pas découper en 4 alors on est sur une brindille
+        if(this.hauteur/2 == 1){
+            System.out.println(tabLum[0][0]);
+            Quadtree F1 = new Quadtree(tabLum[0][0]);
+            System.out.println(tabLum[0][1]);
+            Quadtree F2 = new Quadtree(tabLum[0][1]);
+            System.out.println(tabLum[1][1]);
+            Quadtree F3 = new Quadtree(tabLum[1][1]);
+            System.out.println(tabLum[1][0]);
+            Quadtree F4 = new Quadtree(tabLum[1][0]);
+            Quadtree brindille = new Quadtree(F1, F2, F3, F4);
+            return brindille;
+        //Decoupe de l'image en 4 parties
+        } else {
+            int newHauteur = hauteur/2;
+            int newLargeur = largeur/2;
+            int[][] HG = decoupeTab(tabLum,0,0,newHauteur,newLargeur);
+            int[][] HD = decoupeTab(tabLum,0,0+newLargeur,newHauteur,newLargeur);
+            int[][] BD = decoupeTab(tabLum,0+newHauteur,0+newLargeur,newHauteur,newLargeur);
+            int[][] BG = decoupeTab(tabLum,0+newHauteur,0,newHauteur,newLargeur);
+        
+            Quadtree newTree = new Quadtree(createQuadTree(HG, newHauteur, newLargeur), createQuadTree(HD, newHauteur, newLargeur), 
+                                            createQuadTree(BD, newHauteur, newLargeur), createQuadTree(BG, newHauteur, newLargeur));
+            return newTree;
+        }
+    }
+
+//Sinon un booleen estFeuille en parametre du quadtree?
+    //Regarde si tout les fils du quadtree ont une valeur entiere positive(feuille) dans ce cas c'est une brindille
+    //la comparaison avec null ne marche pas car int n'est pas un objet qui peut etre nul, c'est un type trivial
+    public boolean estBrindille(){
+        if(this.f1.lum != -1 && this.f2.lum != -1 && this.f3.lum != -1 && this.f4.lum != -1) return true;
+        return false;
+    }
+
+    //Regarde si le fils a une valeur entiere positive dans ce cas c'est une feuille
+    //la comparaison avec null ne marche pas car int n'est pas un objet
+    public boolean estFeuille(){
+        if(this.lum != 1) return true;
+        return false;
+    }
+
+    //Affiche l'arbre crée dans la forme parenthésée
+    //toString existe deja dans le langage
+    public void _toString(){
+        System.out.print("( ");
+        if(estBrindille()){
+            System.out.print("("+f1.lum+" "+f2.lum+" "+f3.lum+" "+f4.lum+")");
+        } else {
+            f1._toString();
+            f2._toString();
+            f3._toString();
+            f4._toString();
+        }
+        System.out.print(" )");
     }
     
     //Il manque bcp de get et les set
@@ -133,6 +187,11 @@ public class Quadtree {
     public int getLum(){
         return this.lum;
     }
+
+    public int[][] getTabLum(){
+        return this.tabLum;
+    }
+
     public int getHauteur(){
         return this.hauteur;
     }
