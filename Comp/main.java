@@ -5,11 +5,11 @@ public class main {
     public static void main(String[] args){
         System.out.println("Lancement du programme de Compression d'image PGM");
 
-        String path = "C:\\Users\\Chris\\Documents\\Cours\\L3\\asd3\\ProjetASD3Comp\\imgPGM\\test.pgm";
-        Quadtree A = new Quadtree(path,null,null,null,null);
+        String pathPGMtoQuadTree = "C:\\Users\\Chris\\Documents\\Cours\\L3\\asd3\\ProjetASD3Comp\\imgPGM\\test16_16.pgm";
+        Quadtree A = new Quadtree(pathPGMtoQuadTree,null,null,null,null);
 
-        System.out.println("Compression de l'image PGM suivante : " + path + '\n');
-        System.out.println("Lecture et sauvegarde des proprietés de l'image en cours ");
+        System.out.println("Compression de l'image PGM suivante : " + pathPGMtoQuadTree + '\n');
+        System.out.println("Lecture et sauvegarde des proprietés de l'image en cours... ");
         A.ReadImg();
         System.out.println("Fin de la lecture " + '\n');
 
@@ -17,10 +17,18 @@ public class main {
         A.printInfoPGM();
         A.printTabLum();
 
-        System.out.println('\n' + "Création du QuadTree associé a l'image ");
+        System.out.println('\n' + "Création du QuadTree associé a l'image... ");
         A = A.createQuadTree(A.getTabLum(),A.getHauteur(),A.getLargeur());
         System.out.println("Fin de la création du QuadTree " + '\n');
         System.out.println("Affichage du QuadTree : ");
         A._toString();
+        System.out.println('\n' + "Debut de la compression Lambda...");
+        A.compressLambda();
+        System.out.println("Fin de la compression Lambda");
+        System.out.println("Affichage du QuadTree compressé par la methode Lambda : ");
+        A._toString();
+
+        String pathQuadTreetoPGM = "C:\\Users\\Chris\\Documents\\Cours\\L3\\asd3\\ProjetASD3Comp\\imgPGM\\caca.pgm";
+        A.toPGM(pathQuadTreetoPGM);
     }
 }
