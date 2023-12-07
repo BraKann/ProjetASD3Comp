@@ -116,7 +116,6 @@ public class Quadtree {
         
         for(int ligne = 0; ligne < hauteur; ligne++){
             for(int colonne = 0; colonne < largeur; colonne++){
-                System.out.println(tabLum[0][0] + " " + tabLum[ligne][colonne]);
                 _isSameCol = (tabLum[0][0] == tabLum[ligne][colonne]);
                 if(!_isSameCol){
                     return _isSameCol;
@@ -144,11 +143,16 @@ public class Quadtree {
         //Si L'image est composer de la meme couleur alors pas besoin de decoupe
         if(sameColor(tabLum,hauteur,largeur)){
             Quadtree newTree = new Quadtree(tabLum[0][0]);
+            newTree.commentaire = this.commentaire;
+            newTree.hauteur = this.hauteur;
+            newTree.largeur = this.largeur;
+            newTree.magicNumber = this.magicNumber;
+            newTree.lumMax = this.lumMax;
+            newTree.tabLum = this.tabLum;
             return newTree;
         } 
         //Si on est sur un format 2*2 du tableau de lum alors on creer une brindille prenant 4 feuilles
         if(hauteur/2 == 1){
-            System.out.println(tabLum[0][0]);
             Quadtree F1 = new Quadtree(tabLum[0][0]);
             Quadtree F2 = new Quadtree(tabLum[0][1]);
             Quadtree F3 = new Quadtree(tabLum[1][1]);
@@ -166,6 +170,12 @@ public class Quadtree {
         
             Quadtree newTree = new Quadtree(createQuadTree(HG, newHauteur, newLargeur), createQuadTree(HD, newHauteur, newLargeur), 
                                             createQuadTree(BD, newHauteur, newLargeur), createQuadTree(BG, newHauteur, newLargeur));
+            newTree.commentaire = this.commentaire;
+            newTree.hauteur = this.hauteur;
+            newTree.largeur = this.largeur;
+            newTree.magicNumber = this.magicNumber;
+            newTree.lumMax = this.lumMax;
+            newTree.tabLum = this.tabLum;
             return newTree;
         }
     }
@@ -201,6 +211,7 @@ public class Quadtree {
         }
     }
 
+    //[A FAIRE] creer un nouveau tableau de lum pour l'arbre compressé et ainsi retoutner une image compressé avec toPGM
     //Methode de compression Lambda, prenant la moyenne logarithmique des valeurs des brindilles de l'arbre (fait perdre un niveau a l'arbre)
     public void compressLambda() {
         if(!this.estFeuille()){
@@ -236,15 +247,50 @@ public class Quadtree {
             writer.write(this.commentaire + "\n");
             writer.write(this.largeur + " " + this.hauteur + "\n");
             writer.write(this.lumMax + "\n");
-    
+
+            for (int i = 0; i < this.hauteur; i++) {
+                for (int j = 0; j < this.largeur; j++) {
+                    writer.write(this.tabLum[i][j] + " ");
+                }
+                writer.write("\n");
+            }
             //Ferme le fichier
             writer.close();
-    
+        
         } catch (IOException exception) {
             exception.printStackTrace();
         }
     }
 
+    //Fonction comptant le nombre de noeuds compris dans le quadTree
+    //Initialise le compteur a 1  (la racine)
+    public int nbrNoeuds(int compt){
+        if(estFeuille()){
+            compt = compt + 1;
+            return compt;
+        } else if(estBrindille()) {
+            compt += f1.nbrNoeuds(compt);
+            compt += f2.nbrNoeuds(compt);
+            compt += f3.nbrNoeuds(compt);
+            compt += f4.nbrNoeuds(compt);
+            return compt;
+        } else {
+            compt = compt + 1;
+            compt += f1.nbrNoeuds(compt);
+            compt += f2.nbrNoeuds(compt);
+            compt += f3.nbrNoeuds(compt);
+            compt += f4.nbrNoeuds(compt);
+            return compt;            
+        }
+    }
+
+    //Fonction calculant le taux de compression entre l'arbre et l'arbre compressé
+    //-100 ? si aucune diff alors taux a 0 ?
+    public void tauxDeCompression(int nbrNoeudsComp, int nbrNoeuds) {
+        float tc = ( nbrNoeudsComp / nbrNoeuds ) * 100;
+        System.out.println('\n' + "Le nombre de noeuds de l'arbre non-compressé est : " + nbrNoeuds + '\n' + "Le nombre de noeuds de l'arbre compressé est : " + nbrNoeudsComp + '\n' + "Le taux de compression de l'image est de " + tc + "%");
+    }
+    
     //Il manque bcp de get et les set
 
     public int getLum(){
