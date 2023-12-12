@@ -1,21 +1,9 @@
 import java.io.*; 
-import java.util.Scanner;
 
 public class Quadtree {
-
-    //Chemin du PGM compressé de type : imgPGM/[nom.pgm] ou chemin complet
-    //Image de taille 2^n*2^n (carré)
-    private String path;
-
-    //Informations sur le PGM a garder pour le retourner une fois compressé
-    private String magicNumber;
-    private String commentaire; 
-    private int largeur;
-    private int hauteur;
-    private int lumMax;            
-
-    //Permet de stocker les valeurs de luminosité lu durant le pacours du PGM (hauteur = ligne ET largeur = colonne)
-    private int[][] tabLum;
+    
+    //Objet PGM comportant les informations du fichier pgm et les methode utiles liées
+    private PGM pgm = new PGM();
     
     //Valeurs de luminosité comprise dans le PGM
     private int lum;               
@@ -26,16 +14,19 @@ public class Quadtree {
     private Quadtree f3;
     private Quadtree f4;
 
-    //Constructeur diff pour racine ? avec info du pgm ? [A VOIR]
+    private int nbrNoeudsAvantComp;
+    private int nbrNoeudsApresComp;
 
     //Constructeur initial (racine)
+    //Chemin du PGM compressé de type : imgPGM/[nom.pgm] ou chemin complet
+    //Image de taille 2^n*2^n (carré)
     public Quadtree(String path, Quadtree f1,Quadtree f2,Quadtree f3,Quadtree f4){
-        this.path = path;
         this.f1 = f1;
         this.f2 = f2;
         this.f3 = f3;
         this.f4 = f4;
         this.lum = -1;
+        this.pgm.ReadImg(path);
     }
 
     //Constructeur de noeud
@@ -55,100 +46,14 @@ public class Quadtree {
         this.f4 = null;
         this.lum = lum;
     }
-    
-    //Procedure permetant la lectrue d'un fichier PGM et la sauvegarde de ses données
-    public void ReadImg() {
-        try {
-            
-            //Créer un nouveau fichier et l'objet scanner
-            File img = new File(this.path);
-            Scanner scan = new Scanner(img);
-
-            //Sauvergarde des données du PGM
-            this.magicNumber = scan.nextLine();
-            this.commentaire = scan.nextLine();
-            //Verification reste des commentaire " commence par #" [A FAIRE]
-            this.commentaire += " ";
-            this.commentaire += scan.nextLine();
-            this.largeur = scan.nextInt();
-            this.hauteur = scan.nextInt();
-            this.lumMax = scan.nextInt(); 
-            this.tabLum = new int[this.hauteur][this.largeur];
-
-            for(int ligne = 0; ligne < this.hauteur; ligne++){
-                for(int colonne = 0; colonne <this.largeur; colonne++){
-                    tabLum[ligne][colonne]= scan.nextInt();
-                }
-            }
-            
-            //Quitte le fichier
-            scan.close();
-
-        } catch (IOException exception) {
-		    exception.printStackTrace();
-        }
-    }
-
-    //Procedure permettant l'affichage du tableau 2D contenant les valeur de luminositée
-    public void printTabLum(){
-        for(int ligne = 0; ligne < this.hauteur; ligne++){
-            for(int colonne = 0; colonne < this.largeur; colonne++){
-                System.out.print(this.tabLum[ligne][colonne] + " ");
-            }
-
-            System.out.println();
-        }
-    }
-
-    //Procedure permettant l'affichage des infos sauvergardé du fichier PGM
-    public void printInfoPGM(){
-        System.out.print("Magic Number : " + this.magicNumber + '\n' + 
-                        "Commentaires : " + this.commentaire + '\n' +
-                        "Size : " + this.hauteur + "x" + this.largeur + '\n' + 
-                        "Luminosité max : " + this.lumMax + '\n');
-    }
-
-    //Fonction booleen comparant les lum d'un tableau, retourne faux si au moin un élément du tableau est différent, retourne vrai si tout les éléments du tableau sont égaux
-    //Possiblement, regarder dans quelle partie(HG,HD...) du tableau il y a des non egaux et decouper seulement ces parties (gain de temps et de place ?)[A VOIR] 
-    //Les print nous montre que les comparaison bug, on ne compare pas tout le tableau mais qu'une partie [A debug]
-    public boolean sameColor(int[][] tabLum, int hauteur, int largeur){
-        boolean _isSameCol = false;
-        
-        for(int ligne = 0; ligne < hauteur; ligne++){
-            for(int colonne = 0; colonne < largeur; colonne++){
-                _isSameCol = (tabLum[0][0] == tabLum[ligne][colonne]);
-                if(!_isSameCol){
-                    return _isSameCol;
-                }
-            }
-        }
-        return _isSameCol;
-    }
-
-    //Fonction retournant un tab 2D qui est un sous tableau du tab d'entrée
-    //Represente une partie d'une d'écoupe de notre QuadTree (HG,HD...) 
-    public int[][] decoupeTab(int[][] tabLum, int ligne, int colonne, int hauteur, int largeur){
-        int[][] newTab = new int[hauteur][largeur];
-        for(int posL = 0; posL < hauteur; posL++){
-            for(int posC = 0; posC < largeur; posC++){
-                newTab[posL][posC] = tabLum[posL + ligne][posC + colonne];
-            }
-        }
-        return newTab;
-    }
 
     //Fonction retournant un QuadTree remplie davec les valeur de lum du tableau 2D
     //Mettre en void [A VOIR]
-    public Quadtree createQuadTree(int[][]tabLum, int hauteur, int largeur){
+    public Quadtree createQuadTree(int[][] tabLum, int hauteur, int largeur){
         //Si L'image est composer de la meme couleur alors pas besoin de decoupe
-        if(sameColor(tabLum,hauteur,largeur)){
+        if(this.pgm.sameColor(tabLum,hauteur,largeur)){
             Quadtree newTree = new Quadtree(tabLum[0][0]);
-            newTree.commentaire = this.commentaire;
-            newTree.hauteur = this.hauteur;
-            newTree.largeur = this.largeur;
-            newTree.magicNumber = this.magicNumber;
-            newTree.lumMax = this.lumMax;
-            newTree.tabLum = this.tabLum;
+            newTree.pgm = this.pgm;
             return newTree;
         } 
         //Si on est sur un format 2*2 du tableau de lum alors on creer une brindille prenant 4 feuilles
@@ -158,33 +63,26 @@ public class Quadtree {
             Quadtree F3 = new Quadtree(tabLum[1][1]);
             Quadtree F4 = new Quadtree(tabLum[1][0]);
             Quadtree brindille = new Quadtree(F1, F2, F3, F4);
+            brindille.pgm = this.pgm;
             return brindille;
         //Decoupe de l'image en 4 regions
         } else {
             int newHauteur = hauteur/2;
             int newLargeur = largeur/2;
-            int[][] HG = decoupeTab(tabLum,0,0,newHauteur,newLargeur);
-            int[][] HD = decoupeTab(tabLum,0,0+newLargeur,newHauteur,newLargeur);
-            int[][] BD = decoupeTab(tabLum,0+newHauteur,0+newLargeur,newHauteur,newLargeur);
-            int[][] BG = decoupeTab(tabLum,0+newHauteur,0,newHauteur,newLargeur);
+            int[][] HG = this.pgm.decoupeTab(tabLum,0,0,newHauteur,newLargeur);
+            int[][] HD = this.pgm.decoupeTab(tabLum,0,0+newLargeur,newHauteur,newLargeur);
+            int[][] BD = this.pgm.decoupeTab(tabLum,0+newHauteur,0+newLargeur,newHauteur,newLargeur);
+            int[][] BG = this.pgm.decoupeTab(tabLum,0+newHauteur,0,newHauteur,newLargeur);
         
             Quadtree newTree = new Quadtree(createQuadTree(HG, newHauteur, newLargeur), createQuadTree(HD, newHauteur, newLargeur), 
                                             createQuadTree(BD, newHauteur, newLargeur), createQuadTree(BG, newHauteur, newLargeur));
-            newTree.commentaire = this.commentaire;
-            newTree.hauteur = this.hauteur;
-            newTree.largeur = this.largeur;
-            newTree.magicNumber = this.magicNumber;
-            newTree.lumMax = this.lumMax;
-            newTree.tabLum = this.tabLum;
+            newTree.pgm = this.pgm;
             return newTree;
         }
     }
 
-
     //Regarde si le fils a une valeur entiere positive dans ce cas c'est une feuille
-    //la comparaison avec null ne marche pas car int n'est pas un objet
-    //La comparaison a -1 nous provoque des erreurs car la valeur renvoyer lors de la verif (this.lum) sur un arbre non feuille renvoie 0
-    //PB AVEC LES VAL DE LUM = A 0,; trouver un autre moyen de verif [A debug] initialiser les constructeur avec -1 en lum sauf le constructeur de feuille
+    //la comparaison avec null ne marche pas car int est un type trivial
     public boolean estFeuille(){
         if(this.lum != -1) return true;
         return false;
@@ -211,11 +109,10 @@ public class Quadtree {
         }
     }
 
-    //[A FAIRE] creer un nouveau tableau de lum pour l'arbre compressé et ainsi retoutner une image compressé avec toPGM
     //Methode de compression Lambda, prenant la moyenne logarithmique des valeurs des brindilles de l'arbre (fait perdre un niveau a l'arbre)
-    public void compressLambda() {
+    public void compressLambda(){
         if(!this.estFeuille()){
-            if(this.estBrindille()) {
+            if(this.estBrindille()){
                 double moyenneLum = Math.exp((Math.log(this.f1.lum + 0.1) + Math.log(this.f2.lum + 0.1) + Math.log(this.f3.lum + 0.1) + Math.log(this.f4.lum + 0.1)) / 4); //calcul de la moyenne des luminosité avec formule du tp
                 int arrMoyenneLum = (int) Math.round(moyenneLum);
                 this.lum = arrMoyenneLum; //arrMoyenneLum remplace -1
@@ -232,7 +129,27 @@ public class Quadtree {
             }
         }
     }
-    
+
+    //Procedure parcourant l'arbre en remplissant sur place le tableau 2D de nouvelles valeurs
+    //Utile pour recréer un tableau 2D pour l'arbre compressé et pouvoir l'afficher en PGM plus facilement
+    public void quadTreeToTab2D(int ligneDep, int colonneDep, int hauteur, int largeur){
+        if(this.estFeuille()){
+            for (int i = ligneDep; i < ligneDep + hauteur; i++) {
+                for (int j = colonneDep; j < colonneDep + largeur; j++) {
+                    this.pgm.setValTabLum(i,j, this.lum);
+                }
+            }
+        } else {
+            hauteur = hauteur/2;
+            largeur = largeur/2;
+
+            this.f1.quadTreeToTab2D(ligneDep,colonneDep, hauteur, largeur);
+            this.f2.quadTreeToTab2D(ligneDep,colonneDep+largeur, hauteur, largeur);
+            this.f3.quadTreeToTab2D(ligneDep+hauteur,colonneDep+largeur, hauteur, largeur);
+            this.f4.quadTreeToTab2D(ligneDep+hauteur,colonneDep, hauteur, largeur);
+        }
+    }
+
     //Aucuns paramatres de l'image n'est sauvergarder, a cause du renvoie d'un quadtree dans le quadtree principale dans createQuadTree [A DEBUG]
     //Creer une fonction mettant les valeurs des feuilles dans un nouveau tableau 2D pour l'ecrire dans un fichier
     public void toPGM(String path) {
@@ -243,14 +160,15 @@ public class Quadtree {
             FileWriter writer = new FileWriter(file);
     
             //Ecrit les infos du fichier PGM
-            writer.write(this.magicNumber + "\n");
-            writer.write(this.commentaire + "\n");
-            writer.write(this.largeur + " " + this.hauteur + "\n");
-            writer.write(this.lumMax + "\n");
+            writer.write(this.pgm.getMagicNumber() + "\n");
+            writer.write(this.pgm.getCommentaire() + "\n");
+            writer.write(this.pgm.getLargeur() + " " + this.pgm.getHauteur() + "\n");
+            writer.write(this.pgm.getLumMax() + "\n");
 
-            for (int i = 0; i < this.hauteur; i++) {
-                for (int j = 0; j < this.largeur; j++) {
-                    writer.write(this.tabLum[i][j] + " ");
+            //Ecrit le tableau de luminositée associé a l'arbre
+            for (int i = 0; i < this.pgm.getHauteur(); i++) {
+                for (int j = 0; j < this.pgm.getLargeur(); j++) {
+                    writer.write(this.pgm.getLum(i,j) + " ");
                 }
                 writer.write("\n");
             }
@@ -263,52 +181,49 @@ public class Quadtree {
     }
 
     //Fonction comptant le nombre de noeuds compris dans le quadTree
-    //Initialise le compteur a 1  (la racine)
-    public int nbrNoeuds(int compt){
-        if(estFeuille()){
-            compt = compt + 1;
-            return compt;
-        } else if(estBrindille()) {
-            compt += f1.nbrNoeuds(compt);
-            compt += f2.nbrNoeuds(compt);
-            compt += f3.nbrNoeuds(compt);
-            compt += f4.nbrNoeuds(compt);
-            return compt;
+    public int nbrNoeuds(){
+        if(!estFeuille()){
+            int compt1 = f1.nbrNoeuds();
+            int compt2 = f2.nbrNoeuds();
+            int compt3 = f3.nbrNoeuds();
+            int compt4 = f4.nbrNoeuds();
+            return compt1+compt2+compt3+compt4+1;
         } else {
-            compt = compt + 1;
-            compt += f1.nbrNoeuds(compt);
-            compt += f2.nbrNoeuds(compt);
-            compt += f3.nbrNoeuds(compt);
-            compt += f4.nbrNoeuds(compt);
-            return compt;            
+            return 1;            
         }
     }
 
-    //Fonction calculant le taux de compression entre l'arbre et l'arbre compressé
-    //-100 ? si aucune diff alors taux a 0 ?
-    public void tauxDeCompression(int nbrNoeudsComp, int nbrNoeuds) {
-        float tc = ( nbrNoeudsComp / nbrNoeuds ) * 100;
-        System.out.println('\n' + "Le nombre de noeuds de l'arbre non-compressé est : " + nbrNoeuds + '\n' + "Le nombre de noeuds de l'arbre compressé est : " + nbrNoeudsComp + '\n' + "Le taux de compression de l'image est de " + tc + "%");
+    //Fonction calculant le taux de compression entre l'arbre et l'arbre compressé (0% = aucuns changement du nombres de noeuds / 100% = nombre de noeuds égal à 1 après compression)
+    public void tauxDeCompression() {
+        double tc = Math.round((1-((double)this.nbrNoeudsApresComp/(double)this.nbrNoeudsAvantComp))*100);
+        System.out.println('\n' + "Le nombre de noeuds de l'arbre non-compressé est : " + this.nbrNoeudsAvantComp + '\n' + "Le nombre de noeuds de l'arbre compressé est : " + this.nbrNoeudsApresComp + '\n' + "Le taux de compression de l'image est de " + tc + "%");
     }
-    
-    //Il manque bcp de get et les set
 
+    //SET
+    public void setNbrNoeudsAvantComp(int nbNoeuds){
+        this.nbrNoeudsAvantComp = nbNoeuds;
+    }
+
+    public void setNbrNoeudsApresComp(int nbNoeuds){
+        this.nbrNoeudsApresComp = nbNoeuds;
+    }
+
+    //GET
     public int getLum(){
         return this.lum;
     }
 
-    public int[][] getTabLum(){
-        return this.tabLum;
+    public int getNbrNoeudsAvantComp(){
+        return this.nbrNoeudsAvantComp;
     }
 
-    public int getHauteur(){
-        return this.hauteur;
+    public int getNbrNoeudsApresComp(){
+        return this.nbrNoeudsApresComp;
     }
 
-    public int getLargeur(){
-        return this.largeur;
-    }    
-
+    public PGM getPgm(){
+        return this.pgm;
+    }
     public Quadtree getFils1(){
         return this.f1;
     }
