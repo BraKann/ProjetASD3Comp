@@ -85,7 +85,7 @@ public class Quadtree {
 
             Quadtree newTree = new Quadtree(createQuadTree(HG, newHauteur, newLargeur), createQuadTree(HD, newHauteur, newLargeur), 
                                             createQuadTree(BD, newHauteur, newLargeur), createQuadTree(BG, newHauteur, newLargeur));
-                                            newTree.pgm = this.pgm;
+            newTree.pgm = this.pgm;
             return newTree;
         }
     }
@@ -219,47 +219,52 @@ public class Quadtree {
     //retrouver a quel noeuds appartient le epsilon ? soit liste de numero de quadtree et epsilon donc creer un num unique pour chaque quadtree ou une classe noeuds avec un epsilon et une liste de epsilon dans quadtree
     // un compLambda sur un noeud 
 
-    public void remplirListEpsilon(Quadtree pere, Quadtree racine){
-        if(estBrindille()){
-            double epsilon = Math.abs(Math.exp((Math.log(this.f1.lum + 0.1) + Math.log(this.f2.lum + 0.1) + Math.log(this.f3.lum + 0.1) + Math.log(this.f4.lum + 0.1)) / 4) - Math.max(Math.max(f1.lum, f2.lum),Math.max(f3.lum, f4.lum)));    
-            this.eps = epsilon;
-            this.pere = pere;
+    public void remplirListeEpsilon(Quadtree pere, Quadtree racine){
+        if(!estFeuille()){
+            if(estBrindille()){
+                double epsilon = Math.abs(Math.exp((Math.log(this.f1.lum + 0.1) + Math.log(this.f2.lum + 0.1) + Math.log(this.f3.lum + 0.1) + Math.log(this.f4.lum + 0.1)) / 4) - Math.max(Math.max(f1.lum, f2.lum),Math.max(f3.lum, f4.lum)));    
+                this.eps = epsilon;
+                this.pere = pere;
 
-            //Stocker epsilon dans une liste decroissante
-            if(racine.listEps.isEmpty()){
-                racine.listEps.add(this);
-            } else {
-                insertionTriCroisante(racine.listEps, this);
-            } 
+                //Stocker epsilon dans une liste decroissante
+                if(racine.listEps.isEmpty()){
+                    racine.listEps.add(this);
+                } else {
+                    insertionTriCroisante(racine.listEps, this);
+                } 
             } else {
                 this.pere = pere;
-                f1.remplirListEpsilon(this, racine);
-                f2.remplirListEpsilon(this, racine);
-                f3.remplirListEpsilon(this, racine);
-                f4.remplirListEpsilon(this, racine);
+                f1.remplirListeEpsilon(this, racine);
+                f2.remplirListeEpsilon(this, racine);
+                f3.remplirListeEpsilon(this, racine);
+                f4.remplirListeEpsilon(this, racine);
             }
+        }
         
     }   
 
-    //Compression Rho, prenant en parametre un taux de compression limite, pour pouvoir choisir le taux de dégradation de l'image
+//Compression Rho, prenant en parametre un taux de compression limite, pour pouvoir choisir le taux de dégradation de l'image
     //Les regions avec des valeurs de lum proches seront prioritaire a la compression 
     public void compressRho(int p){ 
-        remplirListEpsilon(this, this);
+        remplirListeEpsilon(this, this);
+        Quadtree temp = new Quadtree(null,null,null,null);
+        temp.pgm = this.pgm;
+        this.nbrNoeudsAvantComp = this.nbrNoeuds();
+        this.nbrNoeudsApresComp = this.nbrNoeuds();
         while(tauxDeCompression() > p){
-            this.nbrNoeudsAvantComp = this.nbrNoeuds();
             this.listEps.get(0).compressLambdaNoeud();
-            Quadtree temp = this.listEps.get(0);
+            temp = this.listEps.get(0);
             this.nbrNoeudsApresComp = this.nbrNoeuds();
+            this.listEps.remove(0);
 
             //regarder si le pere est une brindille si oui calcul esp et ajout liste (a la main)
             if(temp.pere.estBrindille()){
-                this.pere.eps = Math.abs(Math.exp((Math.log(this.pere.f1.lum + 0.1) + Math.log(this.pere.f2.lum + 0.1) + Math.log(this.pere.f3.lum + 0.1) + Math.log(this.pere.f4.lum + 0.1)) / 4) - Math.max(Math.max(pere.f1.lum, pere.f2.lum),Math.max(pere.f3.lum, pere.f4.lum)));
-                this.insertionTriCroisante(this.listEps, this.pere);
+                temp.pere.eps = Math.abs(Math.exp((Math.log(this.pere.f1.lum + 0.1) + Math.log(this.pere.f2.lum + 0.1) + Math.log(this.pere.f3.lum + 0.1) + Math.log(this.pere.f4.lum + 0.1)) / 4) - Math.max(Math.max(pere.f1.lum, pere.f2.lum),Math.max(pere.f3.lum, pere.f4.lum)));
+                temp.insertionTriCroisante(this.listEps, temp.pere);
             }
-            this.listEps.remove(0);
+
         }
     }
-    
 
     //Fonction comptant le nombre de noeuds compris dans le quadTree
     public int nbrNoeuds(){
@@ -275,9 +280,13 @@ public class Quadtree {
     }
 
     //Fonction calculant le taux de compression entre l'arbre et l'arbre compressé (0% = aucuns changement du nombres de noeuds / 100% = nombre de noeuds égal à 1 après compression)
-    public double tauxDeCompression() {
-        double tc = Math.round((1-((double)this.nbrNoeudsApresComp/(double)this.nbrNoeudsAvantComp))*100);
+    public void tauxDeCompressionPrint() {
+        double tc = Math.round((((double)this.nbrNoeudsApresComp/(double)this.nbrNoeudsAvantComp))*100);
         System.out.println('\n' + "Le nombre de noeuds de l'arbre non-compressé est : " + this.nbrNoeudsAvantComp + '\n' + "Le nombre de noeuds de l'arbre compressé est : " + this.nbrNoeudsApresComp + '\n' + "Le taux de compression de l'image est de " + tc + "%");
+    }
+
+    public double tauxDeCompression() {
+        double tc = Math.round((((double)this.nbrNoeudsApresComp/(double)this.nbrNoeudsAvantComp))*100);
         return tc;
     }
 
