@@ -1,4 +1,4 @@
-import java.io.*; 
+import java.io.*;
 import java.util.ArrayList;
 
 public class Quadtree {
@@ -154,21 +154,21 @@ public class Quadtree {
 
     //Procedure parcourant l'arbre en remplissant sur place le tableau 2D de nouvelles valeurs
     //Utile pour recréer un tableau 2D pour l'arbre compressé et pouvoir l'afficher en PGM plus facilement
-    public void quadTreeToTab2D(int ligneDep, int colonneDep, int hauteur, int largeur){
+    public void quadTreeToTab2D(Quadtree racine, int ligneDep, int colonneDep, int hauteur, int largeur){
         if(this.estFeuille()){
             for (int i = ligneDep; i < ligneDep + hauteur; i++) {
                 for (int j = colonneDep; j < colonneDep + largeur; j++) {
-                    this.pgm.setValTabLum(i,j, this.lum);
+                    racine.getPgm().setValTabLum(i,j, this.lum);
                 }
             }
         } else {
             hauteur = hauteur/2;
             largeur = largeur/2;
 
-            this.f1.quadTreeToTab2D(ligneDep,colonneDep, hauteur, largeur);
-            this.f2.quadTreeToTab2D(ligneDep,colonneDep+largeur, hauteur, largeur);
-            this.f3.quadTreeToTab2D(ligneDep+hauteur,colonneDep+largeur, hauteur, largeur);
-            this.f4.quadTreeToTab2D(ligneDep+hauteur,colonneDep, hauteur, largeur);
+            this.f1.quadTreeToTab2D(racine,ligneDep,colonneDep, hauteur, largeur);
+            this.f2.quadTreeToTab2D(racine, ligneDep,colonneDep+largeur, hauteur, largeur);
+            this.f3.quadTreeToTab2D(racine,ligneDep+hauteur,colonneDep+largeur, hauteur, largeur);
+            this.f4.quadTreeToTab2D(racine,ligneDep+hauteur,colonneDep, hauteur, largeur);
         }
     }
 
@@ -177,7 +177,7 @@ public class Quadtree {
     //Faire le toPGM sans passer par un nouveau tableau 2D, faire un parcour suffixe, des feuilles et les ecrire dans le fichier 
     public void toPGM(String path) {
         try {
-
+            quadTreeToTab2D(this,0, 0, this.pgm.getHauteur(), this.pgm.getLargeur());
             //Créer un nouveau fichier
             File file = new File(path);
             FileWriter writer = new FileWriter(file);
@@ -281,7 +281,7 @@ public class Quadtree {
 
     //Fonction calculant le taux de compression entre l'arbre et l'arbre compressé (0% = aucuns changement du nombres de noeuds / 100% = nombre de noeuds égal à 1 après compression)
     public void tauxDeCompressionPrint() {
-        double tc = Math.round((((double)this.nbrNoeudsApresComp/(double)this.nbrNoeudsAvantComp))*100);
+        double tc = Math.round(((double)this.nbrNoeudsApresComp/(double)this.nbrNoeudsAvantComp) *100) ;
         System.out.println('\n' + "Le nombre de noeuds de l'arbre non-compressé est : " + this.nbrNoeudsAvantComp + '\n' + "Le nombre de noeuds de l'arbre compressé est : " + this.nbrNoeudsApresComp + '\n' + "Le taux de compression de l'image est de " + tc + "%");
     }
 
