@@ -18,12 +18,14 @@ public class Quadtree {
     private Quadtree f3;
     private Quadtree f4;
 
+    //Pointe le pere de notre neouds compressé par Rho
     private Quadtree pere;
 
+    //Entier stockant le nombre de noeuds avant et apres compression
     private int nbrNoeudsAvantComp;
     private int nbrNoeudsApresComp;
 
-
+    //Liste contenant les brindilles que l'ont peut compressées avec Rho
     ArrayList<Quadtree> listEps = new ArrayList<>();       
 
     //Constructeur initial
@@ -139,7 +141,6 @@ public class Quadtree {
         }
     }
 
-    
     //Methode de compression Lambda, sur un noeud de l'arbre
     public void compressLambdaNoeud(){
         double moyenneLum = Math.exp((Math.log(this.f1.lum + 0.1) + Math.log(this.f2.lum + 0.1) + Math.log(this.f3.lum + 0.1) + Math.log(this.f4.lum + 0.1)) / 4); //calcul de la moyenne des luminosité avec formule du tp
@@ -172,9 +173,8 @@ public class Quadtree {
         }
     }
 
-    //Aucuns paramatres de l'image n'est sauvergarder, a cause du renvoie d'un quadtree dans le quadtree principale dans createQuadTree [A DEBUG]
-    //Creer une fonction mettant les valeurs des feuilles dans un nouveau tableau 2D pour l'ecrire dans un fichier
-    //Faire le toPGM sans passer par un nouveau tableau 2D, faire un parcour suffixe, des feuilles et les ecrire dans le fichier 
+    //Ecrit dans un fichier les valeurs de lum de notre arbre compressé
+    //Initialise un nouveau tableau 2D pour notre arbre (car alteration de l'image du a la compression)
     public void toPGM(String path) {
         try {
             quadTreeToTab2D(this,0, 0, this.pgm.getHauteur(), this.pgm.getLargeur());
@@ -212,13 +212,9 @@ public class Quadtree {
         }
 
         liste.add(i, elem);
-    }
+    } 
 
-    //Creer un parametre de classe qui est une liste croisante (file)
-    //creer une procedure remplissant la liste 
-    //retrouver a quel noeuds appartient le epsilon ? soit liste de numero de quadtree et epsilon donc creer un num unique pour chaque quadtree ou une classe noeuds avec un epsilon et une liste de epsilon dans quadtree
-    // un compLambda sur un noeud 
-
+    //Rempli la liste d'epsilon en parcourant l'arbre et en calculant l'epsilon des brindille
     public void remplirListeEpsilon(Quadtree pere, Quadtree racine){
         if(!estFeuille()){
             if(estBrindille()){
