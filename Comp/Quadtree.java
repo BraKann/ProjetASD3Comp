@@ -1,4 +1,5 @@
 import java.io.*; 
+import java.util.ArrayList;
 
 public class Quadtree {
     
@@ -8,16 +9,24 @@ public class Quadtree {
     //Valeurs de luminosité comprise dans le PGM
     private int lum;               
 
+    //Valeurs de luminosité comprise dans le PGM
+    private double eps; 
+
     //Les 4 fils(noeuds) du QuadTree
     private Quadtree f1;
     private Quadtree f2;
     private Quadtree f3;
     private Quadtree f4;
 
+    private Quadtree pere;
+
     private int nbrNoeudsAvantComp;
     private int nbrNoeudsApresComp;
 
-    //Constructeur initial (racine)
+
+    ArrayList<Quadtree> listEps = new ArrayList<>();       
+
+    //Constructeur initial
     //Chemin du PGM compressé de type : imgPGM/[nom.pgm] ou chemin complet
     //Image de taille 2^n*2^n (carré)
     public Quadtree(String path, Quadtree f1,Quadtree f2,Quadtree f3,Quadtree f4){
@@ -47,7 +56,7 @@ public class Quadtree {
         this.lum = lum;
     }
 
-    //Fonction retournant un QuadTree remplie davec les valeur de lum du tableau 2D
+    //Fonction retournant un QuadTree remplie avec les valeurs de lum du tableau 2D
     //Mettre en void [A VOIR]
     public Quadtree createQuadTree(int[][] tabLum, int hauteur, int largeur){
         //Si L'image est composer de la meme couleur alors pas besoin de decoupe
@@ -73,10 +82,10 @@ public class Quadtree {
             int[][] HD = this.pgm.decoupeTab(tabLum,0,0+newLargeur,newHauteur,newLargeur);
             int[][] BD = this.pgm.decoupeTab(tabLum,0+newHauteur,0+newLargeur,newHauteur,newLargeur);
             int[][] BG = this.pgm.decoupeTab(tabLum,0+newHauteur,0,newHauteur,newLargeur);
-        
+
             Quadtree newTree = new Quadtree(createQuadTree(HG, newHauteur, newLargeur), createQuadTree(HD, newHauteur, newLargeur), 
                                             createQuadTree(BD, newHauteur, newLargeur), createQuadTree(BG, newHauteur, newLargeur));
-            newTree.pgm = this.pgm;
+                                            newTree.pgm = this.pgm;
             return newTree;
         }
     }
@@ -130,6 +139,19 @@ public class Quadtree {
         }
     }
 
+    
+    //Methode de compression Lambda, sur un noeud de l'arbre
+    public void compressLambdaNoeud(){
+        double moyenneLum = Math.exp((Math.log(this.f1.lum + 0.1) + Math.log(this.f2.lum + 0.1) + Math.log(this.f3.lum + 0.1) + Math.log(this.f4.lum + 0.1)) / 4); //calcul de la moyenne des luminosité avec formule du tp
+        int arrMoyenneLum = (int) Math.round(moyenneLum);
+        this.lum = arrMoyenneLum; //arrMoyenneLum remplace -1
+        //deference les 4 fils (feuilles) les sauvergarder quelques part ?
+        this.f1 = null;
+        this.f2 = null;
+        this.f3 = null;
+        this.f4 = null;               
+    }
+
     //Procedure parcourant l'arbre en remplissant sur place le tableau 2D de nouvelles valeurs
     //Utile pour recréer un tableau 2D pour l'arbre compressé et pouvoir l'afficher en PGM plus facilement
     public void quadTreeToTab2D(int ligneDep, int colonneDep, int hauteur, int largeur){
@@ -152,6 +174,7 @@ public class Quadtree {
 
     //Aucuns paramatres de l'image n'est sauvergarder, a cause du renvoie d'un quadtree dans le quadtree principale dans createQuadTree [A DEBUG]
     //Creer une fonction mettant les valeurs des feuilles dans un nouveau tableau 2D pour l'ecrire dans un fichier
+    //Faire le toPGM sans passer par un nouveau tableau 2D, faire un parcour suffixe, des feuilles et les ecrire dans le fichier 
     public void toPGM(String path) {
         try {
 
@@ -180,6 +203,64 @@ public class Quadtree {
         }
     }
 
+    //Insertion croisante de la liste
+    public void insertionTriCroisante(ArrayList<Quadtree> liste, Quadtree elem){
+        int i = 0;
+        //Donne la place ou doit etre inserer notre elem
+        while (i < liste.size() && liste.get(i).eps < elem.eps) {
+            i++;
+        }
+
+        liste.add(i, elem);
+    }
+
+    //Creer un parametre de classe qui est une liste croisante (file)
+    //creer une procedure remplissant la liste 
+    //retrouver a quel noeuds appartient le epsilon ? soit liste de numero de quadtree et epsilon donc creer un num unique pour chaque quadtree ou une classe noeuds avec un epsilon et une liste de epsilon dans quadtree
+    // un compLambda sur un noeud 
+
+    public void remplirListEpsilon(Quadtree pere, Quadtree racine){
+        if(estBrindille()){
+            double epsilon = Math.abs(Math.exp((Math.log(this.f1.lum + 0.1) + Math.log(this.f2.lum + 0.1) + Math.log(this.f3.lum + 0.1) + Math.log(this.f4.lum + 0.1)) / 4) - Math.max(Math.max(f1.lum, f2.lum),Math.max(f3.lum, f4.lum)));    
+            this.eps = epsilon;
+            this.pere = pere;
+
+            //Stocker epsilon dans une liste decroissante
+            if(racine.listEps.isEmpty()){
+                racine.listEps.add(this);
+            } else {
+                insertionTriCroisante(racine.listEps, this);
+            } 
+            } else {
+                this.pere = pere;
+                f1.remplirListEpsilon(this, racine);
+                f2.remplirListEpsilon(this, racine);
+                f3.remplirListEpsilon(this, racine);
+                f4.remplirListEpsilon(this, racine);
+            }
+        
+    }   
+
+    //Compression Rho, prenant en parametre un taux de compression limite, pour pouvoir choisir le taux de dégradation de l'image
+    //Les regions avec des valeurs de lum proches seront prioritaire a la compression 
+    public void compressRho(int p){ 
+        remplirListEpsilon(this, this);
+        while(tauxDeCompression() > p){
+            this.nbrNoeudsAvantComp = this.nbrNoeuds();
+            this.listEps.get(0).compressLambdaNoeud();
+            Quadtree temp = this.listEps.get(0);
+            this.nbrNoeudsApresComp = this.nbrNoeuds();
+
+            //regarder si le pere est une brindille si oui calcul esp et ajout liste (a la main)
+            if(temp.pere.estBrindille()){
+                this.pere.eps = Math.abs(Math.exp((Math.log(this.pere.f1.lum + 0.1) + Math.log(this.pere.f2.lum + 0.1) + Math.log(this.pere.f3.lum + 0.1) + Math.log(this.pere.f4.lum + 0.1)) / 4) - Math.max(Math.max(pere.f1.lum, pere.f2.lum),Math.max(pere.f3.lum, pere.f4.lum)));
+                this.insertionTriCroisante(this.listEps, this.pere);
+            }
+            this.listEps.remove(0);
+        }
+    }
+    
+
     //Fonction comptant le nombre de noeuds compris dans le quadTree
     public int nbrNoeuds(){
         if(!estFeuille()){
@@ -194,9 +275,10 @@ public class Quadtree {
     }
 
     //Fonction calculant le taux de compression entre l'arbre et l'arbre compressé (0% = aucuns changement du nombres de noeuds / 100% = nombre de noeuds égal à 1 après compression)
-    public void tauxDeCompression() {
+    public double tauxDeCompression() {
         double tc = Math.round((1-((double)this.nbrNoeudsApresComp/(double)this.nbrNoeudsAvantComp))*100);
         System.out.println('\n' + "Le nombre de noeuds de l'arbre non-compressé est : " + this.nbrNoeudsAvantComp + '\n' + "Le nombre de noeuds de l'arbre compressé est : " + this.nbrNoeudsApresComp + '\n' + "Le taux de compression de l'image est de " + tc + "%");
+        return tc;
     }
 
     //SET
@@ -213,6 +295,10 @@ public class Quadtree {
         return this.lum;
     }
 
+    public double getEps(){
+        return this.eps;
+    }
+
     public int getNbrNoeudsAvantComp(){
         return this.nbrNoeudsAvantComp;
     }
@@ -224,18 +310,19 @@ public class Quadtree {
     public PGM getPgm(){
         return this.pgm;
     }
-    public Quadtree getFils1(){
-        return this.f1;
-    }
 
+    public Quadtree getFils1(){
+        return this.f2;
+    }
+    
     public Quadtree getFils2(){
         return this.f2;
     }
     
     public Quadtree getFils3(){
-        return this.f3;
+        return this.f4;
     }
-    
+
     public Quadtree getFils4(){
         return this.f4;
     }

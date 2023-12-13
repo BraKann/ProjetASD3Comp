@@ -63,7 +63,6 @@ public class PGM {
             //Sauvergarde des données du PGM
             this.magicNumber = scan.nextLine();
             this.commentaire = scan.nextLine();
-            //Verification reste des commentaire " commence par #" [A FAIRE]
             this.commentaire += " ";
             this.commentaire += scan.nextLine();
             this.largeur = scan.nextInt();
@@ -85,7 +84,6 @@ public class PGM {
         }
     }
 
-
     //Procedure permettant l'affichage du tableau 2D contenant les valeurs de luminositée
     public void printTabLum(){
         for(int ligne = 0; ligne < this.hauteur; ligne++){
@@ -96,7 +94,6 @@ public class PGM {
         }
     }
         
-    
     //Procedure permettant l'affichage des infos sauvergardé du fichier PGM
     public void printInfoPGM(){
         System.out.print("Magic Number : " + this.magicNumber + '\n' + 
@@ -108,7 +105,7 @@ public class PGM {
 
     //Fonction booleen comparant les lum d'un tableau, retourne faux si au moin un élément du tableau est différent, retourne vrai si tout les éléments du tableau sont égaux
     public boolean sameColor(int[][] tabLum, int hauteur, int largeur){
-        boolean _isSameCol = false;
+        boolean _isSameCol = true;
         
         for(int ligne = 0; ligne < hauteur; ligne++){
             for(int colonne = 0; colonne < largeur; colonne++){
